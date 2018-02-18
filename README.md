@@ -1,0 +1,2 @@
+# GadgetManager
+Gadget swapping addon
