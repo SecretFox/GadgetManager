@@ -8,6 +8,7 @@ class com.fox.GadgetManager.Main
 	{
 		s_app = new App(swfRoot);
 		swfRoot.onLoad = OnLoad;
+		swfRoot.onUnload = onUnload;
 		swfRoot.OnModuleActivated = OnActivated;
 		swfRoot.OnModuleDeactivated = OnDeactivated;
 	}
@@ -18,6 +19,12 @@ class com.fox.GadgetManager.Main
 	{
 		s_app.Load();
 	}
+	
+	public static function onUnload()
+	{
+		s_app.Unload();
+	}
+	
 	public static function OnActivated()
 	{
 		s_app.Activate();

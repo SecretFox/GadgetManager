@@ -1,3 +1,5 @@
+import com.GameInterface.DistributedValue;
+import com.GameInterface.DistributedValueBase;
 import com.GameInterface.Game.CharacterBase;
 import com.GameInterface.Game.Character;
 import com.GameInterface.InventoryItem;
@@ -25,7 +27,10 @@ class com.fox.GadgetManager.App {
 	static var RarityColours = new Array(0xFFFFFF, 0x00ff16, 0x02b6ff, 0xd565f8, 0xF29F05, 0xE62738);
 	private var open:Boolean;
 	private var Tooltip:TooltipInterface;
-	private var DestroyFunction:Function;
+	private var m_Resize:DistributedValue;
+	private var m_MoveX:DistributedValue;
+	private var m_MoveY:DistributedValue;
+	private var Arrow:MovieClip;
 
 	public function App(swfRoot: MovieClip) {
 		m_swfRoot = swfRoot;
@@ -37,26 +42,43 @@ class com.fox.GadgetManager.App {
 		WeaponID32 = new ID32(_global.Enums.InvType.e_Type_GC_WeaponContainer, ((Character.GetClientCharacter()).GetID()).GetInstance());
 		WeaponInventory = new Inventory(WeaponID32)
 		open = false;
-		DestroyFunction = Delegate.create(this, Destroy);
-
+		m_Resize = DistributedValue.Create("AbilityBarScale");
+		m_Resize.SignalChanged.Connect(Reposition, this);
+		m_MoveX = DistributedValue.Create("AbilityBarX");
+		m_MoveX.SignalChanged.Connect(Reposition, this);
+		m_MoveY = DistributedValue.Create("AbilityBarY");
+		m_MoveY.SignalChanged.Connect(Reposition, this);
+		CharacterBase.SignalCharacterEnteredReticuleMode.Connect(Destroy,this);
 	}
-
+	
+	public function Unload() {
+		m_Resize.SignalChanged.Disconnect(Reposition, this);
+		m_MoveX.SignalChanged.Disconnect(Reposition, this);
+		m_MoveY.SignalChanged.Disconnect(Reposition, this);
+		CharacterBase.SignalCharacterEnteredReticuleMode.Disconnect(Destroy, this);
+	}
+	
 	public function Activate() {
 		if (_root.abilitybar.m_GadgetSlot && !m_swfRoot.Arrow) {
-			m_Size = _root.abilitybar.m_GadgetSlot._height;
 			DrawArrow();
-			CharacterBase.SignalCharacterEnteredReticuleMode.Connect(Destroy,this);
 		} else if (!m_swfRoot.Arrow) {
 			setTimeout(Delegate.create(this, Activate), 50);
 		}
 	}
+	
+	private function Reposition(){
+		Arrow.removeMovieClip();
+		DrawArrow();
+		Destroy();
+	}
 
 	private function DrawArrow() {
+		m_Size = _root.abilitybar.m_GadgetSlot._height;
 		GadgetPosition = {x:_root.abilitybar.m_GadgetSlot._x, y:_root.abilitybar.m_GadgetSlot._y};
 		_root.abilitybar.localToGlobal(GadgetPosition);
-		var Arrow:MovieClip = m_swfRoot.attachMovie("src.assets.arrow.png", "Arrow", m_swfRoot.getNextHighestDepth(), {_x:GadgetPosition.x});
+		Arrow = m_swfRoot.attachMovie("src.assets.arrow.png", "Arrow", m_swfRoot.getNextHighestDepth(), {_x:GadgetPosition.x});
 		Arrow._y = GadgetPosition.y - Arrow._height;
-		Arrow._width = _root.abilitybar.m_GadgetSlot._width;
+		Arrow._width = _root.abilitybar.m_GadgetSlot._width*DistributedValueBase.GetDValue("AbilityBarScale")/100;
 
 		Arrow.onPress = Delegate.create(this, function() {
 			if (this.open) {
@@ -70,15 +92,12 @@ class com.fox.GadgetManager.App {
 	}
 
 	private function Start() {
-		GadgetPosition = {x:_root.abilitybar.m_GadgetSlot._x, y:_root.abilitybar.m_GadgetSlot._y - 20};
-		_root.abilitybar.localToGlobal(GadgetPosition);
 		m_MovieClips = new Array();
 		GetGadgets();
 		DrawGadgets();
 	}
 
 	private function DrawGadgets() {
-		GadgetPosition.y -= m_Size+5;
 		var gadget = m_Gadgets.pop();
 		DrawIcon(gadget);
 	}
@@ -86,8 +105,8 @@ class com.fox.GadgetManager.App {
 	public function DrawIcon(Gadget:InventoryItem) {
 		if (Gadget) {
 			var m_Container:MovieClip = m_swfRoot.createEmptyMovieClip("m_" + Gadget.m_Name+"_"+Gadget.m_ACGItem.m_TemplateID0, m_swfRoot.getNextHighestDepth());
-			m_Container._x = GadgetPosition.x;
-			m_Container._y = GadgetPosition.y;
+			m_Container._x = Arrow._x;
+			m_Container._y = Arrow._y + (m_MovieClips.length + 1) *-(m_Size+5);
 
 			var m_BackGround = m_Container.attachMovie("GadgetBackground", "m_Background", m_Container.getNextHighestDepth());
 			var m_Stroke = m_Container.attachMovie("GadgetStroke", "m_stroke", m_Container.getNextHighestDepth());
@@ -109,13 +128,13 @@ class com.fox.GadgetManager.App {
 			Colors.ApplyColor( m_Stroke, RarityColours[Gadget.m_Rarity - 1]);
 			m_Container.onPress = Delegate.create(this, function() {
 				this.WeaponInventory.AddItem(this.PlayerID32, Gadget.m_InventoryPos, -1);
-				this.DestroyFunction();
+				this.Destroy()
 			});
 			m_Container.onRollOver = Delegate.create(this, function() {
 				this.Tooltip.Close();
 				var m_TooltipData:TooltipData = TooltipDataProvider.GetACGItemTooltip(Gadget.m_ACGItem, Gadget.m_Rank);
 				m_TooltipData.m_Title = "<font size='13'>" + Gadget.m_Name+ "</font>";
-				m_TooltipData.m_Color = this.RarityColours[Gadget.m_Rarity - 1];
+				m_TooltipData.m_Color = App.RarityColours[Gadget.m_Rarity - 1];
 				this.Tooltip = TooltipManager.GetInstance().ShowTooltip(undefined, TooltipInterface.e_OrientationVertical, 0.1, m_TooltipData);
 			});
 			m_Container.onRollOut = Delegate.create(this, function() {
@@ -134,7 +153,6 @@ class com.fox.GadgetManager.App {
 	}
 
 	public function Deactivate() {
-		CharacterBase.SignalCharacterEnteredReticuleMode.Disconnect(Destroy, this);
 		Destroy();
 	}
 
