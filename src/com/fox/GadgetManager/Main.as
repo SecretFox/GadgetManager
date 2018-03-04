@@ -32,6 +32,6 @@ class com.fox.GadgetManager.Main
 
 	public static function OnDeactivated()
 	{
-		s_app.Deactivate();
+		s_app.Destroy();
 	}
 }

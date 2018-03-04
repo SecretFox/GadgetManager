@@ -4,6 +4,7 @@ import com.GameInterface.Game.CharacterBase;
 import com.GameInterface.Game.Character;
 import com.GameInterface.InventoryItem;
 import com.GameInterface.Tooltip.TooltipDataProvider;
+import com.GameInterface.UtilsBase;
 import com.Utils.Colors;
 import com.Utils.Format;
 import mx.utils.Delegate;
@@ -48,7 +49,7 @@ class com.fox.GadgetManager.App {
 		m_MoveX.SignalChanged.Connect(Reposition, this);
 		m_MoveY = DistributedValue.Create("AbilityBarY");
 		m_MoveY.SignalChanged.Connect(Reposition, this);
-		CharacterBase.SignalCharacterEnteredReticuleMode.Connect(Destroy,this);
+		CharacterBase.SignalCharacterEnteredReticuleMode.Connect(Destroy, this);
 	}
 	
 	public function Unload() {
@@ -59,17 +60,15 @@ class com.fox.GadgetManager.App {
 	}
 	
 	public function Activate() {
-		if (_root.abilitybar.m_GadgetSlot && !m_swfRoot.Arrow) {
-			DrawArrow();
-		} else if (!m_swfRoot.Arrow) {
-			setTimeout(Delegate.create(this, Activate), 50);
-		}
+		if (_root.abilitybar.m_GadgetSlot) setTimeout(Delegate.create(this, Reposition), 100);
+		else setTimeout(Delegate.create(this, Activate), 50);
 	}
 	
 	private function Reposition(){
 		Arrow.removeMovieClip();
 		DrawArrow();
 		Destroy();
+		
 	}
 
 	private function DrawArrow() {
@@ -150,10 +149,6 @@ class com.fox.GadgetManager.App {
 		}
 		this.Tooltip.Close();
 		open = false;
-	}
-
-	public function Deactivate() {
-		Destroy();
 	}
 
 	private function GetGadgets() {
