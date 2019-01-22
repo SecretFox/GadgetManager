@@ -74,7 +74,7 @@ class com.fox.GadgetManager.App {
 		
 		Arrow._width = Arrow._width * DistributedValueBase.GetDValue("AbilityBarScale") / 100;
 		Arrow._height = Arrow._height * DistributedValueBase.GetDValue("AbilityBarScale") / 100;
-		Arrow._x = GadgetPosition.x - 5;
+		Arrow._x = GadgetPosition.x - 6;
 		Arrow._y = GadgetPosition.y - Arrow._height;
 
 		Arrow.onPress = Delegate.create(this, function() {
@@ -95,50 +95,48 @@ class com.fox.GadgetManager.App {
 
 	private function DrawGadgets() {
 		var gadget = m_Gadgets.pop();
-		DrawIcon(gadget);
+		if (gadget){
+			DrawIcon(gadget);
+		}
 	}
 
 	public function DrawIcon(Gadget:InventoryItem) {
-		if (Gadget) {
-			var m_Container:MovieClip = GadgetContainer.createEmptyMovieClip("m_" + Gadget.m_Name+"_"+Gadget.m_ACGItem.m_TemplateID0, GadgetContainer.getNextHighestDepth());
+		var m_Container:MovieClip = GadgetContainer.createEmptyMovieClip("m_" + Gadget.m_Name+"_"+Gadget.m_ACGItem.m_TemplateID0, GadgetContainer.getNextHighestDepth());
+		var m_BackGround = m_Container.attachMovie("GadgetBackground", "m_Background", m_Container.getNextHighestDepth());
+		var m_Stroke = m_Container.attachMovie("GadgetStroke", "m_stroke", m_Container.getNextHighestDepth());
+		var m_Icon = m_Container.createEmptyMovieClip("m_Icon", m_Container.getNextHighestDepth());
+		m_Icon._xscale = m_Stroke._width - 4;
+		m_Icon._yscale = m_Stroke._width - 4;
+		m_Container._x = Arrow._x + Math.floor(m_MovieClips.length / 10) * (m_Container._width+1);
+		m_Container._y = Arrow._y - (m_MovieClips.length % 10 + 1) * (m_Container._height+1);
+		m_Icon._x = 1;
+		m_Icon._y = 2;
 
-
-			var m_BackGround = m_Container.attachMovie("GadgetBackground", "m_Background", m_Container.getNextHighestDepth());
-			var m_Stroke = m_Container.attachMovie("GadgetStroke", "m_stroke", m_Container.getNextHighestDepth());
-			var m_Icon = m_Container.createEmptyMovieClip("m_Icon", m_Container.getNextHighestDepth());
-			m_Icon._xscale = m_Stroke._width-4;
-			m_Icon._yscale = m_Stroke._width - 4;
-			m_Container._x = Arrow._x;
-			m_Container._y = Arrow._y + -(m_MovieClips.length + 1) * m_Stroke._width;
-			m_Icon._x = 1;
-			m_Icon._y = 2;
-
-			var mclistener:Object = new Object();
-			//timeout creates a nice cascading effect
-			mclistener.onLoadComplete = setTimeout(Delegate.create(this, DrawGadgets),50);
-			m_IconLoader  = new MovieClipLoader();
-			m_IconLoader.addListener( mclistener );
-			var icon:com.Utils.ID32 = Gadget.m_Icon;
-			var iconString:String = Format.Printf( "rdb:%.0f:%.0f", icon.GetType(), icon.GetInstance() );
-			m_IconLoader.loadClip( iconString, m_Icon );
-			Colors.ApplyColor( m_BackGround, 0x1B1B1B);
-			Colors.ApplyColor( m_Stroke, Colors.GetItemRarityColor(Gadget.m_Rarity));
-			m_Container.onPress = Delegate.create(this, function() {
-				this.WeaponInventory.AddItem(this.PlayerID32, Gadget.m_InventoryPos, -1);
-				this.Destroy()
-			});
-			m_Container.onRollOver = Delegate.create(this, function() {
-				this.Tooltip.Close();
-				var m_TooltipData:TooltipData = TooltipDataProvider.GetACGItemTooltip(Gadget.m_ACGItem, Gadget.m_Rank);
-				m_TooltipData.m_Title = "<font size='13'>" + Gadget.m_Name+ "</font>";
-				m_TooltipData.m_Color = Colors.GetItemRarityColor(Gadget.m_Rarity);
-				this.Tooltip = TooltipManager.GetInstance().ShowTooltip(undefined, TooltipInterface.e_OrientationVertical, 0.1, m_TooltipData);
-			});
-			m_Container.onRollOut = Delegate.create(this, function() {
-				this.Tooltip.Close();
-			});
-			m_MovieClips.push(m_Container);
-		}
+		var mclistener:Object = new Object();
+		//timeout creates a nice cascading effect
+		mclistener.onLoadComplete = setTimeout(Delegate.create(this, DrawGadgets),50);
+		m_IconLoader  = new MovieClipLoader();
+		m_IconLoader.addListener( mclistener );
+		var icon:com.Utils.ID32 = Gadget.m_Icon;
+		var iconString:String = Format.Printf( "rdb:%.0f:%.0f", icon.GetType(), icon.GetInstance() );
+		m_IconLoader.loadClip( iconString, m_Icon );
+		Colors.ApplyColor( m_BackGround, 0x1B1B1B);
+		Colors.ApplyColor( m_Stroke, Colors.GetItemRarityColor(Gadget.m_Rarity));
+		m_Container.onPress = Delegate.create(this, function() {
+			this.WeaponInventory.AddItem(this.PlayerID32, Gadget.m_InventoryPos, -1);
+			this.Destroy()
+		});
+		m_Container.onRollOver = Delegate.create(this, function() {
+			this.Tooltip.Close();
+			var m_TooltipData:TooltipData = TooltipDataProvider.GetACGItemTooltip(Gadget.m_ACGItem, Gadget.m_Rank);
+			m_TooltipData.m_Title = "<font size='13'>" + Gadget.m_Name+ "</font>";
+			m_TooltipData.m_Color = Colors.GetItemRarityColor(Gadget.m_Rarity);
+			this.Tooltip = TooltipManager.GetInstance().ShowTooltip(undefined, TooltipInterface.e_OrientationVertical, 0.1, m_TooltipData);
+		});
+		m_Container.onRollOut = Delegate.create(this, function() {
+			this.Tooltip.Close();
+		});
+		m_MovieClips.push(m_Container);
 	}
 
 	public function Destroy() {
@@ -154,13 +152,13 @@ class com.fox.GadgetManager.App {
 		var inventorySize = PlayerInventory.GetMaxItems();
 		for (var counter:Number = 0; counter < inventorySize ; counter++) {
 			var item:InventoryItem = PlayerInventory.GetItemAt(counter);
-			if (item.m_RealType == 30050 && item.m_IsBoundToPlayer == true) {
+			if (item.m_RealType == 30050 && item.m_IsBoundToPlayer) {
 				m_Gadgets.push(item);
 			}
 		}
 		m_Gadgets.sortOn("m_Rarity",Array.DESCENDING);
 		//10 gadgets max should do?
-		m_Gadgets.splice(10);
+		//m_Gadgets.splice(10);
 		m_Gadgets.sortOn("m_Rarity");
 	}
 }
