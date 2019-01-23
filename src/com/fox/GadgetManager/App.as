@@ -5,6 +5,7 @@ import com.GameInterface.Game.Character;
 import com.GameInterface.InventoryItem;
 import com.GameInterface.Tooltip.TooltipDataProvider;
 import com.Utils.Colors;
+import com.Utils.Draw;
 import com.Utils.Format;
 import mx.utils.Delegate;
 import com.Utils.ID32;
@@ -30,6 +31,7 @@ class com.fox.GadgetManager.App {
 	private var m_MoveY:DistributedValue;
 	private var Arrow:MovieClip;
 	private var GadgetContainer:MovieClip
+	private var m_BG:MovieClip
 
 	public function App(swfRoot: MovieClip) {
 		m_swfRoot = swfRoot;
@@ -54,6 +56,7 @@ class com.fox.GadgetManager.App {
 		m_MoveX.SignalChanged.Disconnect(Reposition, this);
 		m_MoveY.SignalChanged.Disconnect(Reposition, this);
 		CharacterBase.SignalCharacterEnteredReticuleMode.Disconnect(Destroy, this);
+		Destroy();
 	}
 	
 	public function Activate() {
@@ -71,11 +74,16 @@ class com.fox.GadgetManager.App {
 		GadgetPosition = {x:_root.abilitybar.m_GadgetSlot._x, y:_root.abilitybar.m_GadgetSlot._y};
 		_root.abilitybar.localToGlobal(GadgetPosition);
 		Arrow = m_swfRoot.attachMovie("src.assets.arrow.png", "Arrow", m_swfRoot.getNextHighestDepth());
+		// Bad scaling
 		
-		Arrow._width = Arrow._width * DistributedValueBase.GetDValue("AbilityBarScale") / 100;
-		Arrow._height = Arrow._height * DistributedValueBase.GetDValue("AbilityBarScale") / 100;
-		Arrow._x = GadgetPosition.x - 6;
-		Arrow._y = GadgetPosition.y - Arrow._height;
+		var scalingFactor = DistributedValueBase.GetDValue("AbilityBarScale") / 100
+		var org = Arrow._width
+		Arrow._x = GadgetPosition.x + _root.abilitybar.m_GadgetSlot._width/4*scalingFactor;
+		Arrow._xscale *= scalingFactor * 0.5;
+		Arrow._yscale = Arrow._xscale;
+		Arrow._y = GadgetPosition.y - Arrow._height - 2;
+
+
 
 		Arrow.onPress = Delegate.create(this, function() {
 			if (this.GadgetContainer){
@@ -89,6 +97,7 @@ class com.fox.GadgetManager.App {
 	private function Start() {
 		m_MovieClips = new Array();
 		GadgetContainer = m_swfRoot.createEmptyMovieClip("m_Gadgets", m_swfRoot.getNextHighestDepth());
+		m_BG = GadgetContainer.createEmptyMovieClip("m_BG", GadgetContainer.getNextHighestDepth());
 		GetGadgets();
 		DrawGadgets();
 	}
@@ -97,6 +106,16 @@ class com.fox.GadgetManager.App {
 		var gadget = m_Gadgets.pop();
 		if (gadget){
 			DrawIcon(gadget);
+		} else{
+			// Could draw the BG after each gadget,but it looks alright like this
+			m_BG.clear();
+			Draw.DrawRectangle(m_BG,
+			m_MovieClips[0]._x - m_MovieClips[0]._width / 4,
+			Arrow._y - GadgetContainer._height - m_MovieClips[0]._height/4 ,
+			GadgetContainer._width + m_MovieClips[0]._width/2,
+			GadgetContainer._height + m_MovieClips[0]._height/4,
+			0x000000, 70, [4, 4, 4, 4],
+			1, 0xFFFFFF, 0, true, false)
 		}
 	}
 
@@ -107,14 +126,13 @@ class com.fox.GadgetManager.App {
 		var m_Icon = m_Container.createEmptyMovieClip("m_Icon", m_Container.getNextHighestDepth());
 		m_Icon._xscale = m_Stroke._width - 4;
 		m_Icon._yscale = m_Stroke._width - 4;
-		m_Container._x = Arrow._x + Math.floor(m_MovieClips.length / 10) * (m_Container._width+1);
-		m_Container._y = Arrow._y - (m_MovieClips.length % 10 + 1) * (m_Container._height+1);
+		m_Container._x = Arrow._x + Math.floor(m_MovieClips.length / 10) * (m_Container._width+2);
+		m_Container._y = Arrow._y - (m_MovieClips.length % 10 + 1) * (m_Container._height+2) ;
 		m_Icon._x = 1;
 		m_Icon._y = 2;
 
 		var mclistener:Object = new Object();
-		//timeout creates a nice cascading effect
-		mclistener.onLoadComplete = setTimeout(Delegate.create(this, DrawGadgets),50);
+		mclistener.onLoadComplete = Delegate.create(this, DrawGadgets);
 		m_IconLoader  = new MovieClipLoader();
 		m_IconLoader.addListener( mclistener );
 		var icon:com.Utils.ID32 = Gadget.m_Icon;
@@ -143,8 +161,10 @@ class com.fox.GadgetManager.App {
 		for (var clip in m_MovieClips) {
 			m_MovieClips[clip].removeMovieClip();
 		}
-		this.Tooltip.Close();
+		m_MovieClips = new Array();
+		Tooltip.Close();
 		GadgetContainer.removeMovieClip();
+		m_BG.removeMovieClip();
 	}
 
 	private function GetGadgets() {
@@ -157,8 +177,5 @@ class com.fox.GadgetManager.App {
 			}
 		}
 		m_Gadgets.sortOn("m_Rarity",Array.DESCENDING);
-		//10 gadgets max should do?
-		//m_Gadgets.splice(10);
-		m_Gadgets.sortOn("m_Rarity");
 	}
 }

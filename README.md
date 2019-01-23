@@ -1,3 +1,3 @@
 # GadgetManager
 Gadget swapping addon  
-![alt text](https://i.imgur.com/MSla8k6.png "Preview")
+[![Menu](Menu.png "Menu")](https://raw.githubusercontent.com/SecretFox/GadgetManager/master/Menu.png)  
