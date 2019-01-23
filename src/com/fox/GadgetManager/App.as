@@ -78,10 +78,10 @@ class com.fox.GadgetManager.App {
 		
 		var scalingFactor = DistributedValueBase.GetDValue("AbilityBarScale") / 100
 		var org = Arrow._width
-		Arrow._x = GadgetPosition.x + _root.abilitybar.m_GadgetSlot._width/4*scalingFactor;
-		Arrow._xscale *= scalingFactor * 0.5;
-		Arrow._yscale = Arrow._xscale;
-		Arrow._y = GadgetPosition.y - Arrow._height - 2;
+		Arrow._x = GadgetPosition.x + _root.abilitybar.m_GadgetSlot._width/8*scalingFactor;
+		Arrow._xscale *= scalingFactor * 0.75;
+		Arrow._yscale = Arrow._xscale * 0.6;
+		Arrow._y = GadgetPosition.y - Arrow._height - 4*scalingFactor;
 
 
 
