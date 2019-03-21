@@ -24,7 +24,6 @@ class com.fox.GadgetManager.App {
 	private var WeaponInventory:Inventory;
 	private var PlayerID32:ID32;
 	private var PlayerInventory:Inventory;
-	static var RarityColours = new Array(0xFFFFFF, 0x00ff16, 0x02b6ff, 0xd565f8, 0xF29F05, 0xE62738);
 	private var Tooltip:TooltipInterface;
 	private var m_Resize:DistributedValue;
 	private var m_MoveX:DistributedValue;
@@ -92,7 +91,7 @@ class com.fox.GadgetManager.App {
 				this.Start();
 			}
 		});
-	}
+}
 
 	private function Start() {
 		m_MovieClips = new Array();
@@ -138,7 +137,8 @@ class com.fox.GadgetManager.App {
 		var icon:com.Utils.ID32 = Gadget.m_Icon;
 		var iconString:String = Format.Printf( "rdb:%.0f:%.0f", icon.GetType(), icon.GetInstance() );
 		m_IconLoader.loadClip( iconString, m_Icon );
-		Colors.ApplyColor( m_BackGround, 0x1B1B1B);
+		if (!Gadget["equipped"]) Colors.ApplyColor( m_BackGround, 0x1B1B1B);
+		else Colors.ApplyColor( m_BackGround, 0x17A003);
 		Colors.ApplyColor( m_Stroke, Colors.GetItemRarityColor(Gadget.m_Rarity));
 		m_Container.onPress = Delegate.create(this, function() {
 			this.WeaponInventory.AddItem(this.PlayerID32, Gadget.m_InventoryPos, -1);
@@ -175,6 +175,11 @@ class com.fox.GadgetManager.App {
 			if (item.m_RealType == 30050 && item.m_IsBoundToPlayer) {
 				m_Gadgets.push(item);
 			}
+		}
+		var gadget = _root.abilitybar_3_.m_GadgetSlot.m_GadgetItem;
+		if (gadget){
+			gadget.equipped = true;
+			m_Gadgets.push(gadget);
 		}
 		m_Gadgets.sortOn(["m_Rarity","m_Name"],[Array.NUMERIC | Array.CASEINSENSITIVE, Array.DESCENDING]);
 	}
