@@ -24,7 +24,6 @@ class com.fox.GadgetManager.App {
 	private var WeaponInventory:Inventory;
 	private var PlayerID32:ID32;
 	private var PlayerInventory:Inventory;
-	static var RarityColours = new Array(0xFFFFFF, 0x00ff16, 0x02b6ff, 0xd565f8, 0xF29F05, 0xE62738);
 	private var Tooltip:TooltipInterface;
 	private var m_Resize:DistributedValue;
 	private var m_MoveX:DistributedValue;
@@ -127,7 +126,7 @@ class com.fox.GadgetManager.App {
 		m_Icon._xscale = m_Stroke._width - 4;
 		m_Icon._yscale = m_Stroke._width - 4;
 		m_Container._x = Arrow._x + Math.floor(m_MovieClips.length / 10) * (m_Container._width+2);
-		m_Container._y = Arrow._y - (m_MovieClips.length % 10 + 1) * (m_Container._height+2) ;
+		m_Container._y = Arrow._y - (10-(m_MovieClips.length % 10)) * (m_Container._height+2) ;
 		m_Icon._x = 1;
 		m_Icon._y = 2;
 
@@ -138,7 +137,8 @@ class com.fox.GadgetManager.App {
 		var icon:com.Utils.ID32 = Gadget.m_Icon;
 		var iconString:String = Format.Printf( "rdb:%.0f:%.0f", icon.GetType(), icon.GetInstance() );
 		m_IconLoader.loadClip( iconString, m_Icon );
-		Colors.ApplyColor( m_BackGround, 0x1B1B1B);
+		if (!Gadget["equipped"]) Colors.ApplyColor( m_BackGround, 0x1B1B1B);
+		else Colors.ApplyColor( m_BackGround, 0x17A003);
 		Colors.ApplyColor( m_Stroke, Colors.GetItemRarityColor(Gadget.m_Rarity));
 		m_Container.onPress = Delegate.create(this, function() {
 			this.WeaponInventory.AddItem(this.PlayerID32, Gadget.m_InventoryPos, -1);
@@ -176,6 +176,11 @@ class com.fox.GadgetManager.App {
 				m_Gadgets.push(item);
 			}
 		}
-		m_Gadgets.sortOn("m_Rarity",Array.DESCENDING);
+		var gadget = _root.abilitybar_3_.m_GadgetSlot.m_GadgetItem;
+		if (gadget){
+			gadget.equipped = true;
+			m_Gadgets.push(gadget);
+		}
+		m_Gadgets.sortOn(["m_Rarity","m_Name"],[Array.NUMERIC | Array.CASEINSENSITIVE, Array.DESCENDING]);
 	}
 }
