@@ -137,13 +137,15 @@ class com.fox.GadgetManager.App {
 		var icon:com.Utils.ID32 = Gadget.m_Icon;
 		var iconString:String = Format.Printf( "rdb:%.0f:%.0f", icon.GetType(), icon.GetInstance() );
 		m_IconLoader.loadClip( iconString, m_Icon );
-		if (!Gadget["equipped"]) Colors.ApplyColor( m_BackGround, 0x1B1B1B);
+		if (!Gadget["equipped"]){
+			Colors.ApplyColor( m_BackGround, 0x1B1B1B);
+			m_Container.onPress = Delegate.create(this, function() {
+				this.WeaponInventory.AddItem(this.PlayerID32, Gadget.m_InventoryPos, -1);
+				this.Destroy()
+			});
+		}
 		else Colors.ApplyColor( m_BackGround, 0x17A003);
 		Colors.ApplyColor( m_Stroke, Colors.GetItemRarityColor(Gadget.m_Rarity));
-		m_Container.onPress = Delegate.create(this, function() {
-			this.WeaponInventory.AddItem(this.PlayerID32, Gadget.m_InventoryPos, -1);
-			this.Destroy()
-		});
 		m_Container.onRollOver = Delegate.create(this, function() {
 			this.Tooltip.Close();
 			var m_TooltipData:TooltipData = TooltipDataProvider.GetACGItemTooltip(Gadget.m_ACGItem, Gadget.m_Rank);
