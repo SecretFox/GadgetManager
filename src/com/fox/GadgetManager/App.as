@@ -127,7 +127,7 @@ class com.fox.GadgetManager.App {
 		m_Icon._xscale = m_Stroke._width - 4;
 		m_Icon._yscale = m_Stroke._width - 4;
 		m_Container._x = Arrow._x + Math.floor(m_MovieClips.length / 10) * (m_Container._width+2);
-		m_Container._y = Arrow._y - (m_MovieClips.length % 10 + 1) * (m_Container._height+2) ;
+		m_Container._y = Arrow._y - (10-(m_MovieClips.length % 10)) * (m_Container._height+2) ;
 		m_Icon._x = 1;
 		m_Icon._y = 2;
 
@@ -176,6 +176,6 @@ class com.fox.GadgetManager.App {
 				m_Gadgets.push(item);
 			}
 		}
-		m_Gadgets.sortOn("m_Rarity",Array.DESCENDING);
+		m_Gadgets.sortOn(["m_Rarity","m_Name"],[Array.NUMERIC | Array.CASEINSENSITIVE, Array.DESCENDING]);
 	}
 }
