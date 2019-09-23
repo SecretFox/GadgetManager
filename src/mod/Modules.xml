@@ -3,8 +3,8 @@
   <Module  name = "GadgetManager"
     movie       = "GadgetManager\GadgetManager.swf"
     flags       = ""
-    depth_layer = "Middle"
-    sub_depth   = "4"
+    depth_layer = "Top"
+    sub_depth   = "1"
     variable    = "GadgetManager"
     criteria    = "GadgetManager &amp;&amp; (guimode &amp; (GUIMODEFLAGS_INPLAY | GUIMODEFLAGS_ENABLEALLGUI))"
   />

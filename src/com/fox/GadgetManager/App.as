@@ -23,6 +23,7 @@ class com.fox.GadgetManager.App {
 	private var WeaponID32:ID32;
 	private var WeaponInventory:Inventory;
 	private var PlayerID32:ID32;
+	private var m_GadgetLength:Number;
 	private var PlayerInventory:Inventory;
 	private var Tooltip:TooltipInterface;
 	private var m_Resize:DistributedValue;
@@ -125,8 +126,12 @@ class com.fox.GadgetManager.App {
 		var m_Icon = m_Container.createEmptyMovieClip("m_Icon", m_Container.getNextHighestDepth());
 		m_Icon._xscale = m_Stroke._width - 4;
 		m_Icon._yscale = m_Stroke._width - 4;
-		m_Container._x = Arrow._x + Math.floor(m_MovieClips.length / 10) * (m_Container._width+2);
-		m_Container._y = Arrow._y - (10-(m_MovieClips.length % 10)) * (m_Container._height+2) ;
+		m_Container._x = Arrow._x + Math.floor(m_MovieClips.length / 10) * (m_Container._width + 2);
+		if m_GadgetLength >= 10{
+			m_Container._y = Arrow._y - (10-(m_MovieClips.length % 10)) * (m_Container._height+2);
+		} else{
+			m_Container._y = Arrow._y - ( m_MovieClips.length + 1) * (m_Container._height + 2);
+		}
 		m_Icon._x = 1;
 		m_Icon._y = 2;
 
@@ -183,6 +188,7 @@ class com.fox.GadgetManager.App {
 			gadget.equipped = true;
 			m_Gadgets.push(gadget);
 		}
-		m_Gadgets.sortOn(["m_Rarity","m_Name"],[Array.NUMERIC | Array.CASEINSENSITIVE, Array.DESCENDING]);
+		m_Gadgets.sortOn(["m_Rarity", "m_Name"], [Array.NUMERIC | Array.CASEINSENSITIVE, Array.DESCENDING]);
+		m_GadgetLength = m_Gadgets.length;
 	}
 }
