@@ -4,6 +4,7 @@ import com.GameInterface.Game.CharacterBase;
 import com.GameInterface.Game.Character;
 import com.GameInterface.InventoryItem;
 import com.GameInterface.Tooltip.TooltipDataProvider;
+import com.Utils.Archive;
 import com.Utils.Colors;
 import com.Utils.Draw;
 import com.Utils.Format;
@@ -32,15 +33,20 @@ class com.fox.GadgetManager.App {
 	private var Arrow:MovieClip;
 	private var GadgetContainer:MovieClip
 	private var m_BG:MovieClip
+	private var dOpenWithInventory:DistributedValue;
+	private var dInventoryOpened:DistributedValue;
 
 	public function App(swfRoot: MovieClip) {
 		m_swfRoot = swfRoot;
+		dOpenWithInventory = DistributedValue.Create("GadgetManager_OpenWithInventory");
+		dInventoryOpened = DistributedValue.Create("inventory_visible");
 	}
 
 	public function Load() {
-		PlayerID32 = new ID32(_global.Enums.InvType.e_Type_GC_BackpackContainer, ((Character.GetClientCharacter()).GetID()).GetInstance());
+		var m_Player:Character = Character.GetClientCharacter();
+		PlayerID32 = new ID32(_global.Enums.InvType.e_Type_GC_BackpackContainer, m_Player.GetID().GetInstance());
 		PlayerInventory = new Inventory(PlayerID32)
-		WeaponID32 = new ID32(_global.Enums.InvType.e_Type_GC_WeaponContainer, ((Character.GetClientCharacter()).GetID()).GetInstance());
+		WeaponID32 = new ID32(_global.Enums.InvType.e_Type_GC_WeaponContainer, m_Player.GetID().GetInstance());
 		WeaponInventory = new Inventory(WeaponID32)
 		m_Resize = DistributedValue.Create("AbilityBarScale");
 		m_Resize.SignalChanged.Connect(Reposition, this);
@@ -49,6 +55,7 @@ class com.fox.GadgetManager.App {
 		m_MoveY = DistributedValue.Create("AbilityBarY");
 		m_MoveY.SignalChanged.Connect(Reposition, this);
 		CharacterBase.SignalCharacterEnteredReticuleMode.Connect(Destroy, this);
+		dInventoryOpened.SignalChanged.Connect(SlotInventoryOpened, this);
 	}
 	
 	public function Unload() {
@@ -56,12 +63,20 @@ class com.fox.GadgetManager.App {
 		m_MoveX.SignalChanged.Disconnect(Reposition, this);
 		m_MoveY.SignalChanged.Disconnect(Reposition, this);
 		CharacterBase.SignalCharacterEnteredReticuleMode.Disconnect(Destroy, this);
+		dInventoryOpened.SignalChanged.Disconnect(SlotInventoryOpened, this);
 		Destroy();
 	}
 	
-	public function Activate() {
+	public function Activate(config:Archive) {
+		dOpenWithInventory.SetValue(config.FindEntry("OpenWithInventory", true));
 		if (!Arrow && _root.abilitybar.m_GadgetSlot) Reposition();
 		else if (!Arrow) setTimeout(Delegate.create(this, Activate), 50);
+		SlotInventoryOpened(dInventoryOpened);
+	}
+	private function Deactivate(){
+		var config:Archive = new Archive();
+		config.AddEntry("OpenWithInventory", dOpenWithInventory.GetValue());
+		return config;
 	}
 	
 	private function Reposition(){
@@ -118,6 +133,16 @@ class com.fox.GadgetManager.App {
 			1, 0xFFFFFF, 0, true, false)
 		}
 	}
+	
+	private function SlotInventoryOpened(dv:DistributedValue){
+		if (dOpenWithInventory.GetValue()){
+			if (dv.GetValue()){
+				Start();
+			}else{
+				Destroy();
+			}
+		}
+	}
 
 	public function DrawIcon(Gadget:InventoryItem) {
 		var m_Container:MovieClip = GadgetContainer.createEmptyMovieClip("m_" + Gadget.m_Name+"_"+Gadget.m_ACGItem.m_TemplateID0, GadgetContainer.getNextHighestDepth());
@@ -144,12 +169,26 @@ class com.fox.GadgetManager.App {
 		m_IconLoader.loadClip( iconString, m_Icon );
 		if (!Gadget["equipped"]){
 			Colors.ApplyColor( m_BackGround, 0x1B1B1B);
-			m_Container.onPress = Delegate.create(this, function() {
-				this.WeaponInventory.AddItem(this.PlayerID32, Gadget.m_InventoryPos, -1);
-				this.Destroy()
-			});
 		}
 		else Colors.ApplyColor( m_BackGround, 0x17A003);
+		m_Container.onPress = Delegate.create(this, function() {
+			var inventorySize = this.PlayerInventory.GetMaxItems();
+			for (var counter:Number = 0; counter < inventorySize ; counter++) {
+				var item:InventoryItem = this.PlayerInventory.GetItemAt(counter);
+				if (item.m_ACGItem.m_TemplateID0 == Gadget.m_ACGItem.m_TemplateID0 && item.m_IsBoundToPlayer) {
+					this.WeaponInventory.AddItem(this.PlayerID32, item.m_InventoryPos, -1);
+					break
+				}
+			}
+			if (!this.dOpenWithInventory.GetValue()) this.Destroy();
+			else{
+				for (var i in this.m_MovieClips){
+					var gadget = this.m_MovieClips[i];
+					Colors.ApplyColor( gadget.m_Background, 0x1B1B1B);
+				}
+				Colors.ApplyColor( m_Container.m_Background, 0x17A003);
+			}
+		});
 		Colors.ApplyColor( m_Stroke, Colors.GetItemRarityColor(Gadget.m_Rarity));
 		m_Container.onRollOver = Delegate.create(this, function() {
 			this.Tooltip.Close();
@@ -183,7 +222,7 @@ class com.fox.GadgetManager.App {
 				m_Gadgets.push(item);
 			}
 		}
-		var gadget = _root.abilitybar_3_.m_GadgetSlot.m_GadgetItem;
+		var gadget = _root.abilitybar.m_GadgetSlot.m_GadgetItem;
 		if (gadget){
 			gadget.equipped = true;
 			m_Gadgets.push(gadget);

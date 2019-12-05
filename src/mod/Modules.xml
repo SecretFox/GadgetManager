@@ -2,10 +2,11 @@
 <Root>
   <Module  name = "GadgetManager"
     movie       = "GadgetManager\GadgetManager.swf"
-    flags       = ""
+    flags       = "GMF_CFG_STORE_USER_CONFIG"
     depth_layer = "Top"
     sub_depth   = "1"
     variable    = "GadgetManager"
     criteria    = "GadgetManager &amp;&amp; (guimode &amp; (GUIMODEFLAGS_INPLAY | GUIMODEFLAGS_ENABLEALLGUI))"
+	config_name = "GadgetManager_Cfg"
   />
 </Root>

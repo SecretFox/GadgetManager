@@ -1,31 +1,11 @@
 import com.fox.GadgetManager.App
 
 class com.fox.GadgetManager.Main {
-	private static var s_app:App;
-
 	public static function main(swfRoot:MovieClip):Void {
-		s_app = new App(swfRoot);
-		swfRoot.onLoad = OnLoad;
-		swfRoot.onUnload = onUnload;
-		swfRoot.OnModuleActivated = OnActivated;
-		swfRoot.OnModuleDeactivated = OnDeactivated;
-	}
-
-	public function Main() { }
-
-	public static function OnLoad() {
-		s_app.Load();
-	}
-
-	public static function onUnload() {
-		s_app.Unload();
-	}
-
-	public static function OnActivated() {
-		s_app.Activate();
-	}
-
-	public static function OnDeactivated() {
-		s_app.Destroy();
+		var s_app = new App(swfRoot);
+		swfRoot.onLoad = function() {s_app.Load()};
+		swfRoot.onUnload = function() {s_app.Unload()};
+		swfRoot.OnModuleActivated = function(config) {s_app.Activate(config)};
+		swfRoot.OnModuleDeactivated  = function() {return s_app.Deactivate()};
 	}
 }
