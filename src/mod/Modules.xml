@@ -6,7 +6,7 @@
     depth_layer = "Top"
     sub_depth   = "1"
     variable    = "GadgetManager"
-    criteria    = "GadgetManager &amp;&amp; (guimode &amp; (GUIMODEFLAGS_INPLAY | GUIMODEFLAGS_ENABLEALLGUI))"
+    criteria    = "GadgetManager &amp;&amp; !dressingRoom_window &amp;&amp; (guimode &amp; (GUIMODEFLAGS_INPLAY | GUIMODEFLAGS_ENABLEALLGUI))"
 	config_name = "GadgetManager_Cfg"
   />
 </Root>

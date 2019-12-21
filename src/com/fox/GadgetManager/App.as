@@ -21,6 +21,7 @@ class com.fox.GadgetManager.App {
 	private var GadgetPosition:Object
 	private var m_MovieClips:Array;
 	private var m_Gadgets:Array;
+	private var m_Player:Character;
 	private var WeaponID32:ID32;
 	private var WeaponInventory:Inventory;
 	private var PlayerID32:ID32;
@@ -35,15 +36,19 @@ class com.fox.GadgetManager.App {
 	private var m_BG:MovieClip
 	private var dOpenWithInventory:DistributedValue;
 	private var dInventoryOpened:DistributedValue;
+	static var MarkForEquip;
+	private var targetContainer;
+	private var targetGadget;
 
 	public function App(swfRoot: MovieClip) {
+		MarkForEquip = Delegate.create(this, _MarkForEquip);
 		m_swfRoot = swfRoot;
 		dOpenWithInventory = DistributedValue.Create("GadgetManager_OpenWithInventory");
 		dInventoryOpened = DistributedValue.Create("inventory_visible");
 	}
 
 	public function Load() {
-		var m_Player:Character = Character.GetClientCharacter();
+		m_Player = Character.GetClientCharacter();
 		PlayerID32 = new ID32(_global.Enums.InvType.e_Type_GC_BackpackContainer, m_Player.GetID().GetInstance());
 		PlayerInventory = new Inventory(PlayerID32)
 		WeaponID32 = new ID32(_global.Enums.InvType.e_Type_GC_WeaponContainer, m_Player.GetID().GetInstance());
@@ -59,6 +64,7 @@ class com.fox.GadgetManager.App {
 	}
 	
 	public function Unload() {
+		m_Player.SignalToggleCombat.Disconnect(EquipGadget, this);
 		m_Resize.SignalChanged.Disconnect(Reposition, this);
 		m_MoveX.SignalChanged.Disconnect(Reposition, this);
 		m_MoveY.SignalChanged.Disconnect(Reposition, this);
@@ -92,7 +98,6 @@ class com.fox.GadgetManager.App {
 		// Bad scaling
 		
 		var scalingFactor = DistributedValueBase.GetDValue("AbilityBarScale") / 100
-		var org = Arrow._width
 		Arrow._x = GadgetPosition.x + _root.abilitybar.m_GadgetSlot._width/4*scalingFactor;
 		Arrow._xscale *= scalingFactor * 0.5;
 		Arrow._yscale = Arrow._xscale;
@@ -137,15 +142,59 @@ class com.fox.GadgetManager.App {
 	private function SlotInventoryOpened(dv:DistributedValue){
 		if (dOpenWithInventory.GetValue()){
 			if (dv.GetValue()){
-				Start();
+				if(m_MovieClips.length == 0)Start();
 			}else{
 				Destroy();
 			}
 		}
 	}
+	
+	public function _MarkForEquip(target){
+		m_Player.SignalToggleCombat.Disconnect(EquipGadget, this);
+		targetContainer = target;
+		targetGadget = target.Gadget.m_ACGItem.m_TemplateID0;
+		if (!dOpenWithInventory.GetValue()){
+			targetContainer = undefined;
+			Destroy();
+		}
+		m_Player.SignalToggleCombat.Connect(EquipGadget, this);
+		EquipGadget();
+	}
+	
+	private function EquipGadget(){
+		if (!m_Player.IsInCombat()){
+			var inventorySize = PlayerInventory.GetMaxItems();
+			for (var counter:Number = 0; counter < inventorySize ; counter++) {
+				var item:InventoryItem = PlayerInventory.GetItemAt(counter);
+				if (item.m_ACGItem.m_TemplateID0 == targetGadget && item.m_IsBoundToPlayer) {
+					WeaponInventory.AddItem(PlayerID32, item.m_InventoryPos, -1);
+					break
+				}
+			}
+			if (dOpenWithInventory.GetValue()){
+				for (var i in m_MovieClips){
+					var gadget = m_MovieClips[i];
+					Colors.ApplyColor( gadget.m_Background, 0x1B1B1B);
+				}
+				Colors.ApplyColor( targetContainer.m_Background, 0x17A003);
+			}
+			m_Player.SignalToggleCombat.Disconnect(EquipGadget, this);
+			targetContainer = undefined;
+			targetGadget = undefined;
+		}else{
+			if (dOpenWithInventory.GetValue()){
+				for (var i in m_MovieClips){
+					var gadget = m_MovieClips[i];
+					Colors.ApplyColor( gadget.m_Background, 0x1B1B1B);
+				}
+				Colors.ApplyColor( targetContainer.m_Background, 0xFF0000);
+			}
+		}
+	}
 
 	public function DrawIcon(Gadget:InventoryItem) {
-		var m_Container:MovieClip = GadgetContainer.createEmptyMovieClip("m_" + Gadget.m_Name+"_"+Gadget.m_ACGItem.m_TemplateID0, GadgetContainer.getNextHighestDepth());
+		var m_Container:MovieClip = GadgetContainer.createEmptyMovieClip("m_" + Gadget.m_Name+"_" + Gadget.m_ACGItem.m_TemplateID0, GadgetContainer.getNextHighestDepth());
+		m_Container.Gadget = Gadget;
 		var m_BackGround = m_Container.attachMovie("GadgetBackground", "m_Background", m_Container.getNextHighestDepth());
 		var m_Stroke = m_Container.attachMovie("GadgetStroke", "m_stroke", m_Container.getNextHighestDepth());
 		var m_Icon = m_Container.createEmptyMovieClip("m_Icon", m_Container.getNextHighestDepth());
@@ -167,27 +216,13 @@ class com.fox.GadgetManager.App {
 		var icon:com.Utils.ID32 = Gadget.m_Icon;
 		var iconString:String = Format.Printf( "rdb:%.0f:%.0f", icon.GetType(), icon.GetInstance() );
 		m_IconLoader.loadClip( iconString, m_Icon );
-		if (!Gadget["equipped"]){
-			Colors.ApplyColor( m_BackGround, 0x1B1B1B);
-		}
-		else Colors.ApplyColor( m_BackGround, 0x17A003);
+		if ( Gadget.m_ACGItem.m_TemplateID0 == targetGadget) Colors.ApplyColor( m_BackGround, 0xFF0000);
+		else if (!targetGadget && Gadget["equipped"]) Colors.ApplyColor( m_BackGround, 0x17A003);
+		else Colors.ApplyColor( m_BackGround, 0x1B1B1B);
+		
+		
 		m_Container.onPress = Delegate.create(this, function() {
-			var inventorySize = this.PlayerInventory.GetMaxItems();
-			for (var counter:Number = 0; counter < inventorySize ; counter++) {
-				var item:InventoryItem = this.PlayerInventory.GetItemAt(counter);
-				if (item.m_ACGItem.m_TemplateID0 == Gadget.m_ACGItem.m_TemplateID0 && item.m_IsBoundToPlayer) {
-					this.WeaponInventory.AddItem(this.PlayerID32, item.m_InventoryPos, -1);
-					break
-				}
-			}
-			if (!this.dOpenWithInventory.GetValue()) this.Destroy();
-			else{
-				for (var i in this.m_MovieClips){
-					var gadget = this.m_MovieClips[i];
-					Colors.ApplyColor( gadget.m_Background, 0x1B1B1B);
-				}
-				Colors.ApplyColor( m_Container.m_Background, 0x17A003);
-			}
+			App.MarkForEquip(m_Container);
 		});
 		Colors.ApplyColor( m_Stroke, Colors.GetItemRarityColor(Gadget.m_Rarity));
 		m_Container.onRollOver = Delegate.create(this, function() {
@@ -202,7 +237,6 @@ class com.fox.GadgetManager.App {
 		});
 		m_MovieClips.push(m_Container);
 	}
-
 	public function Destroy() {
 		for (var clip in m_MovieClips) {
 			m_MovieClips[clip].removeMovieClip();
