@@ -18,25 +18,29 @@ import com.GameInterface.Tooltip.TooltipManager;
 class com.fox.GadgetManager.App {
 	private var m_swfRoot:MovieClip;
 	private var m_IconLoader:MovieClipLoader;
-	private var GadgetPosition:Object
-	private var m_MovieClips:Array;
+	private var Arrow:MovieClip;
 	private var m_Gadgets:Array;
+	private var GadgetContainer:MovieClip
+	private var m_MovieClips:Array;
+	private var m_BG:MovieClip
+	
+	
 	private var m_Player:Character;
 	private var WeaponID32:ID32;
 	private var WeaponInventory:Inventory;
 	private var PlayerID32:ID32;
+	
 	private var m_GadgetLength:Number;
 	private var PlayerInventory:Inventory;
 	private var Tooltip:TooltipInterface;
+
+	private var dOpenWithInventory:DistributedValue;
+	private var dInventoryOpened:DistributedValue;
 	private var m_Resize:DistributedValue;
 	private var m_MoveX:DistributedValue;
 	private var m_MoveY:DistributedValue;
-	private var Arrow:MovieClip;
-	private var GadgetContainer:MovieClip
-	private var m_BG:MovieClip
-	private var dOpenWithInventory:DistributedValue;
-	private var dInventoryOpened:DistributedValue;
-	static var MarkForEquip;
+	
+	static var MarkForEquip:Function;
 	private var targetContainer;
 	private var targetGadget;
 
@@ -74,10 +78,17 @@ class com.fox.GadgetManager.App {
 	}
 	
 	public function Activate(config:Archive) {
-		dOpenWithInventory.SetValue(config.FindEntry("OpenWithInventory", true));
-		if (!Arrow && _root.abilitybar.m_GadgetSlot) Reposition();
-		else if (!Arrow) setTimeout(Delegate.create(this, Activate), 50);
-		SlotInventoryOpened(dInventoryOpened);
+		dOpenWithInventory.SetValue(config.FindEntry("OpenWithInventory", false));
+		CheckArrow();
+	}
+	private function CheckArrow(){
+		if (!Arrow && _root.abilitybar.m_GadgetSlot){
+			Reposition();
+			SlotInventoryOpened(dInventoryOpened);
+		}
+		else if (!Arrow){
+			setTimeout(Delegate.create(this, CheckArrow), 50);
+		}
 	}
 	private function Deactivate(){
 		var config:Archive = new Archive();
@@ -92,19 +103,17 @@ class com.fox.GadgetManager.App {
 	}
 
 	private function DrawArrow() {
-		GadgetPosition = {x:_root.abilitybar.m_GadgetSlot._x, y:_root.abilitybar.m_GadgetSlot._y};
+		var GadgetPosition:Object = {x:_root.abilitybar.m_GadgetSlot._x, y:_root.abilitybar.m_GadgetSlot._y};
 		_root.abilitybar.localToGlobal(GadgetPosition);
 		Arrow = m_swfRoot.attachMovie("src.assets.arrow.png", "Arrow", m_swfRoot.getNextHighestDepth());
-		// Bad scaling
 		
+		// Bad scaling
 		var scalingFactor = DistributedValueBase.GetDValue("AbilityBarScale") / 100
 		Arrow._x = GadgetPosition.x + _root.abilitybar.m_GadgetSlot._width/4*scalingFactor;
 		Arrow._xscale *= scalingFactor * 0.5;
 		Arrow._yscale = Arrow._xscale;
 		Arrow._y = GadgetPosition.y - Arrow._height - 2;
-
-
-
+		
 		Arrow.onPress = Delegate.create(this, function() {
 			if (this.GadgetContainer){
 				this.Destroy();
