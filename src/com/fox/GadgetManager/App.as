@@ -135,6 +135,7 @@ class com.fox.GadgetManager.App {
 		var gadget = m_Gadgets.pop();
 		if (gadget){
 			DrawIcon(gadget);
+			DrawGadgets();
 		} else{
 			// Could draw the BG after each gadget,but it looks alright like this
 			m_BG.clear();
@@ -202,7 +203,7 @@ class com.fox.GadgetManager.App {
 	}
 
 	public function DrawIcon(Gadget:InventoryItem) {
-		var m_Container:MovieClip = GadgetContainer.createEmptyMovieClip("m_" + Gadget.m_Name+"_" + Gadget.m_ACGItem.m_TemplateID0, GadgetContainer.getNextHighestDepth());
+		var m_Container:MovieClip = GadgetContainer.createEmptyMovieClip("m_" + Gadget.m_ACGItem.m_TemplateID0, GadgetContainer.getNextHighestDepth());
 		m_Container.Gadget = Gadget;
 		var m_BackGround = m_Container.attachMovie("GadgetBackground", "m_Background", m_Container.getNextHighestDepth());
 		var m_Stroke = m_Container.attachMovie("GadgetStroke", "m_stroke", m_Container.getNextHighestDepth());
@@ -210,25 +211,26 @@ class com.fox.GadgetManager.App {
 		m_Icon._xscale = m_Stroke._width - 4;
 		m_Icon._yscale = m_Stroke._width - 4;
 		m_Container._x = Arrow._x + Math.floor(m_MovieClips.length / 10) * (m_Container._width + 2);
-		if m_GadgetLength >= 10{
+		if (m_GadgetLength >= 10) {
 			m_Container._y = Arrow._y - (10-(m_MovieClips.length % 10)) * (m_Container._height+2);
 		} else{
 			m_Container._y = Arrow._y - ( m_MovieClips.length + 1) * (m_Container._height + 2);
 		}
-		m_Icon._x = 1;
+		var w = m_BackGround._width - 4;
+		var h = m_BackGround._height - 4;
+		
+		m_Icon._xscale = w;
+		m_Icon._yscale = h;
+		m_Icon._x = 2;
 		m_Icon._y = 2;
 
-		var mclistener:Object = new Object();
-		mclistener.onLoadComplete = Delegate.create(this, DrawGadgets);
-		m_IconLoader  = new MovieClipLoader();
-		m_IconLoader.addListener( mclistener );
+		m_IconLoader = new MovieClipLoader();
 		var icon:com.Utils.ID32 = Gadget.m_Icon;
 		var iconString:String = Format.Printf( "rdb:%.0f:%.0f", icon.GetType(), icon.GetInstance() );
 		m_IconLoader.loadClip( iconString, m_Icon );
 		if ( Gadget.m_ACGItem.m_TemplateID0 == targetGadget) Colors.ApplyColor( m_BackGround, 0xFF0000);
 		else if (!targetGadget && Gadget["equipped"]) Colors.ApplyColor( m_BackGround, 0x17A003);
 		else Colors.ApplyColor( m_BackGround, 0x1B1B1B);
-		
 		
 		m_Container.onPress = Delegate.create(this, function() {
 			App.MarkForEquip(m_Container);
@@ -246,6 +248,7 @@ class com.fox.GadgetManager.App {
 		});
 		m_MovieClips.push(m_Container);
 	}
+	
 	public function Destroy() {
 		for (var clip in m_MovieClips) {
 			m_MovieClips[clip].removeMovieClip();
@@ -272,5 +275,6 @@ class com.fox.GadgetManager.App {
 		}
 		m_Gadgets.sortOn(["m_Rarity", "m_Name"], [Array.NUMERIC | Array.CASEINSENSITIVE, Array.DESCENDING]);
 		m_GadgetLength = m_Gadgets.length;
+		
 	}
 }

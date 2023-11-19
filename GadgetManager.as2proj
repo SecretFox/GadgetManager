@@ -52,8 +52,8 @@
   <!-- Executed before build -->
   <preBuildCommand />
   <!-- Executed after build -->
-  <postBuildCommand alwaysRun="False">xcopy "$(ProjectDir)\bin\*.*" "H:\Secret World Legends\Data\Gui\Custom\Flash\GadgetManager\" /e /y
-xcopy "$(ProjectDir)\src\mod\*.*" "H:\Secret World Legends\Data\Gui\Custom\Flash\GadgetManager\" /e /y
+  <postBuildCommand alwaysRun="False">xcopy "$(ProjectDir)\bin\*.*" "J:\Secret World Legends\Data\Gui\Custom\Flash\GadgetManager\" /e /y
+xcopy "$(ProjectDir)\src\mod\*.*" "J:\Secret World Legends\Data\Gui\Custom\Flash\GadgetManager\" /e /y
 
 xcopy "$(ProjectDir)\src\mod\*.*" "$(ProjectDir)/deployment/$(ProjectName)/*.*" /e /y
 xcopy "$(ProjectDir)\bin\*.*" "$(ProjectDir)/deployment/$(ProjectName)/*.*" /e /y</postBuildCommand>
